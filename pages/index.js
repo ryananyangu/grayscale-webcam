@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as tf from "@tensorflow/tfjs";
 import * as bodyPix from "@tensorflow-models/body-pix";
+import { Button, Card, Container, Chip } from "@material-ui/core";
 
 const modelConfig = {
   architecture: "MobileNetV1",
@@ -10,27 +11,25 @@ const modelConfig = {
 };
 
 export default function Home() {
-  let ctx_out, video_in, ctx_tmp, c_tmp, c_out, model;
+  let ctx_out, video_in, ctx_tmp, c_tmp, c_out;
 
   const processedVid = useRef();
   const rawVideo = useRef();
   const startBtn = useRef();
   const closeBtn = useRef();
   const videoDownloadRef = useRef();
-  const [loading, setLoading] = useState(true);
+  const [model, setModel] = useState(null);
 
   useEffect(() => {
     if (model) return;
-
     const start_time = Date.now() / 1000;
 
     bodyPix.load(modelConfig).then((m) => {
-      model = m;
+      setModel(m);
       const end_time = Date.now() / 1000;
-      setLoading(false);
       console.log(`model loaded successfully, ${end_time - start_time}`);
     });
-  });
+  }, []);
 
   const segmentationConfig = {
     internalResolution: "full",
@@ -181,35 +180,40 @@ export default function Home() {
   };
 
   return (
-    <div>
-      <video
-        width={800}
-        height={450}
-        ref={rawVideo}
-        // controls
-        autoPlay
-        playsInline
-        // src="someone2.webm"
-      ></video>
-      <br />
-      <canvas width={800} height={450} ref={processedVid}></canvas>
-      <br />
-      {!loading && (
+    <div className="container">
+      {model && (
         <>
-          <button onClick={startCamHandler} ref={startBtn}>
-            Start Webcam
-          </button>
-          <button onClick={stopCamHandler} ref={closeBtn}>
-            Close and upload original video
-          </button>
-          <button>
-            <a ref={videoDownloadRef} href={videoUrl}>
-              Get Original video
-            </a>
-          </button>
+          <div className="card">
+            <div className="videos">
+              <video
+              className="display"
+                width={800}
+                height={450}
+                ref={rawVideo}
+                autoPlay
+                playsInline
+              ></video>
+            </div>
+             
+              <canvas className="display" width={800} height={450} ref={processedVid}></canvas>
+           
+          </div>
+          <div className="buttons">
+            <button className="button" onClick={startCamHandler} ref={startBtn}>
+              Start Webcam
+            </button>
+            <button className="button" onClick={stopCamHandler} ref={closeBtn}>
+              Close and upload original video
+            </button>
+            <button className="button">
+              <a ref={videoDownloadRef} href={videoUrl}>
+                Get Original video
+              </a>
+            </button>
+          </div>
         </>
       )}
-      {loading && <p>Loading machine learning models...</p>}
+      {!model && <div>Loading machine learning models...</div>}
     </div>
   );
 }

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@material-ui/core": "^4.12.3",
     "@tensorflow-models/body-pix": "^2.2.0",
     "@tensorflow/tfjs": "^3.14.0",
     "cloudinary": "^1.28.1",
