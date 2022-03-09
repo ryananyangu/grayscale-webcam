@@ -125,7 +125,6 @@ export default function Home() {
   };
 
   let transform = () => {
-    // let ;
     c_out = processedVid.current;
     ctx_out = c_out.getContext("2d");
 
@@ -138,7 +137,7 @@ export default function Home() {
     computeFrame();
   };
 
-  let computeFrame = () => {
+  let computeFrame = async () => {
     ctx_tmp.drawImage(
       video_in,
       0,
@@ -154,29 +153,43 @@ export default function Home() {
       video_in.videoHeight
     );
 
-    model.segmentPerson(frame, segmentationConfig).then((segmentation) => {
-      let output_img = ctx_out.getImageData(
-        0,
-        0,
-        video_in.videoWidth,
-        video_in.videoHeight
-      );
+    const { data: segmentation } = await model.segmentPerson(
+      frame,
+      segmentationConfig
+    );
 
-      for (let x = 0; x < video_in.videoWidth; x++) {
-        for (let y = 0; y < video_in.videoHeight; y++) {
-          let n = x + y * video_in.videoWidth;
-          if (segmentation.data[n] == 0) {
-            output_img.data[n * 4] = frame.data[n * 4]; // R
-            output_img.data[n * 4 + 1] = frame.data[n * 4 + 1]; // G
-            output_img.data[n * 4 + 2] = frame.data[n * 4 + 2]; // B
-            output_img.data[n * 4 + 3] = frame.data[n * 4 + 3]; // A
-          }
-        }
-      }
-      // console.log(segmentation);
-      ctx_out.putImageData(output_img, 0, 0);
-      setTimeout(computeFrame, 30);
-    });
+    // .then((segmentation) => {
+    let output_img = ctx_out.getImageData(
+      0,
+      0,
+      video_in.videoWidth,
+      video_in.videoHeight
+    );
+
+    for (let i = 0; i < segmentation.length; i++) {
+      // Extract data into r, g, b, a from imgData
+      const [r, g, b, a] = [
+        frame.data[i * 4],
+        frame.data[i * 4 + 1],
+        frame.data[i * 4 + 2],
+        frame.data[i * 4 + 3],
+      ];
+
+      // Calculate the gray color
+      const gray = 0.3 * r + 0.59 * g + 0.11 * b;
+
+      // Set new RGB color to gray if map value is not 1
+      // for the current pixel in iteration
+      [
+        output_img.data[i * 4],
+        output_img.data[i * 4 + 1],
+        output_img.data[i * 4 + 2],
+        output_img.data[i * 4 + 3],
+      ] = !segmentation[i] ? [gray, gray, gray, 255] : [r, g, b, a];
+    }
+
+    ctx_out.putImageData(output_img, 0, 0);
+    setTimeout(computeFrame, 0);
   };
 
   return (
@@ -186,7 +199,7 @@ export default function Home() {
           <div className="card">
             <div className="videos">
               <video
-              className="display"
+                className="display"
                 width={800}
                 height={450}
                 ref={rawVideo}
@@ -194,9 +207,13 @@ export default function Home() {
                 playsInline
               ></video>
             </div>
-             
-              <canvas className="display" width={800} height={450} ref={processedVid}></canvas>
-           
+
+            <canvas
+              className="display"
+              width={800}
+              height={450}
+              ref={processedVid}
+            ></canvas>
           </div>
           <div className="buttons">
             <button className="button" onClick={startCamHandler} ref={startBtn}>
